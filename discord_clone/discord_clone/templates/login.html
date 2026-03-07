@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+<body>
+    <nav>
+        <a href="{% url 'home_view' %}">Back home</a><br>
+        <a href="{% url 'register_view' %}">Register</a>
+    </nav>
+    <main>
+        <h1>Login page</h1>
+        <form method="post">
+            {%csrf_token%}
+            Enter name: <input type="name"><br><br>
+            Enter password: <input type="password" name="pass" ><br><br>
+            <button type="submit">Log in</button>
+        </form>
+    </main>
+    
+</body>
+</html>
