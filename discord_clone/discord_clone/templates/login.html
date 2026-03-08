@@ -1,24 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
 </head>
 <body>
     <nav>
-        <a href="{% url 'home_view' %}">Back home</a><br>
-        <a href="{% url 'register_view' %}">Register</a>
+        <a href="{% url 'welcome_view' %}">Wroc do panelu startowego</a><br>
     </nav>
     <main>
-        <h1>Login page</h1>
-        <form method="post">
-            {%csrf_token%}
-            Enter name: <input type="name"><br><br>
-            Enter password: <input type="password" name="pass" ><br><br>
-            <button type="submit">Log in</button>
+    <div>
+        <h1>Panel logowania</h1>
+        <form class="box width ">
+        <div class="field">
+            <label class="label">Nazwa uzytkownika</label>
+            <div class="control">
+            <input class="input" type="email" placeholder="e.g. user@gmail.com" />
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Haslo</label>
+            <div class="control">
+            <input class="input" type="password" placeholder="********" />
+            </div>
+        </div>
+
+        <button method="POST" class="button is-primary">Sign in</button>
         </form>
     </main>
-    
+    </div>
 </body>
 </html>

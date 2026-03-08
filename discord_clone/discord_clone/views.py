@@ -3,6 +3,13 @@ from django.views import View
 from django.shortcuts import redirect, render
 
 
+class WelcomeView(View):
+    template_name = "welcome.html"
+
+    def get(self, request):
+
+        return render(request, self.template_name)
+
 class HomeView(View):
     template_name = "home.html"
 
@@ -17,9 +24,6 @@ class LoginView(View):
     def get(self, request):
         return render(request, self.template_name)
 
+    def post(self, request):
+        return redirect("home_view")
 
-class RegisterView(View):
-    template_name = "register.html"
-
-    def get(self, request):
-        return render(request, self.template_name)
