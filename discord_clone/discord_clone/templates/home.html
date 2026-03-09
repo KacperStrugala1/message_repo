@@ -3,13 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+    <title>Home page</title>
 </head>
 <body>
-    <main>
-        <h1>Jestes zalogowany: *USER*</h1>
-        <br>
-        <button type="button">Dodaj sieć</button>
+    <main class="column is-half is-offset-one-quarter">
+        <h1 class="title is-2">Witaj (username) {{user.username}}</h1>
+        <div class="box">
+            
+            {% comment %} {{user.username}} {% endcomment %}
+            
+            <h3 class="title is-5">Polacz sie z kanalem</h3>
+            
+            <form>
+            <div class="field">
+                <label class="label">Adres sieci</label>
+                <div class="control">
+                <input class="input" placeholder="e.g. 127.0.0.1" />
+                </div>
+            </div>
+            
+            </form>
+            <br>
+            <a href="{% url 'channel_view' %}">
+                <button class="button is-primary">Polacz sie z siecia</button>
+            </a>
+        </div>
     </main>
 
     

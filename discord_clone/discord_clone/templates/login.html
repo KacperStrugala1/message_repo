@@ -4,33 +4,53 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login page</title>
+    <style>
+        a {
+            text-decoration: none;
+            color: black;
+        }
+    </style>
 </head>
 <body>
     <nav>
-        <a href="{% url 'welcome_view' %}">Wroc do panelu startowego</a><br>
+        <button class="button is-danger m-3">
+            <a href="{% url 'welcome_view' %}">
+                Wroc do panelu startowego
+            </a><br>
+        </button>
+        
     </nav>
     <main>
-    <div>
-        <h1>Panel logowania</h1>
-        <form class="box width ">
-        <div class="field">
-            <label class="label">Nazwa uzytkownika</label>
-            <div class="control">
-            <input class="input" type="email" placeholder="e.g. user@gmail.com" />
+        <div class="column is-half is-offset-one-quarter">
+            <div class="box ">
+                <h1 class="title is-2">Panel logowania</h1>
+                {% csrf_token %}
+                <form class="">
+                <div class="field">
+                    <label class="label">Email/Nazwa uzytkownika</label>
+                    <div class="control">
+                    <input class="input" type="email" placeholder="e.g. user@gmail.com" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Haslo</label>
+                    <div class="control">
+                    <input class="input" type="password" placeholder="********" />
+                    </div>
+                </div>
+                <br>
+               
+                </form>
+                 {% comment %}Put it into form template {% endcomment %}
+                <a href="{% url 'home_view' %}">
+                    <button class="button is-primary" >Zaloguj sie</button>
+                </a>
+        
             </div>
         </div>
-
-        <div class="field">
-            <label class="label">Haslo</label>
-            <div class="control">
-            <input class="input" type="password" placeholder="********" />
-            </div>
-        </div>
-
-        <button method="POST" class="button is-primary">Sign in</button>
-        </form>
     </main>
-    </div>
+    
 </body>
 </html>
