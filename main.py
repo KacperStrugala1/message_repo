@@ -1,22 +1,47 @@
-from discord_clone.discord_clone.utils import socket_connect as sc
+from time import sleep
 import struct
+import socket
+
+HOST="127.0.0.1"
+PORT=9999
+
+serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+serversocket.connect((HOST, PORT))
 
 
 #> - big endian 
 #0x01-00000001	Handshake version = 1
-version = 2
-handshake = struct.pack(">BB", 0x01, version)
-sc.serversocket.sendall(handshake)
 
-#0x02-00000010	Ping
+# #0x02-00000010	Ping
 ping = struct.pack(">B", 0x02)
-sc.sendall(ping)
+packet_type = serversocket.recv(1)
+print(f"{packet_type}")
 
-#0x03-00000011	Pong
-pong = struct.pack(">B", 0x03)
+while True:
+    
+    #ping i pong
+    #recive 1 byte
+    packet_type = serversocket.recv(1)
+    sleep(3)
+    serversocket.sendall(ping)
+    if packet_type == b"\x03":
+        #uint64 -8 bytes so read 8 bytes
+        pong = serversocket.recv(8)
+        #unpack bytes stream
+        timestamp = struct.unpack(">Q", pong)[0]
+        print(f"Timestamp : {timestamp}")
+    #     #0xFF-00000010	Test
+        
+    #     serversocket.sendall(ping)
 
-#0x04-00000100	Message
-pong = struct.pack(">B", 0x04)
+    elif packet_type == b"\x04":  # Message
+            data = bytearray()
 
-#0xFF-00000010	Test
+            while True:
+                b = serversocket.recv(1)
+                if b == b'\x00':
+                    break
+                data += b
 
+            text = data.decode("utf-8")
+            print("Message:", text)
