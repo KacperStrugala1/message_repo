@@ -15,19 +15,23 @@
 </head>
 <body>
 
-    <main class="column is-half is-offset-one-quarter">
+    <main class="column is-half is-offset-one-quarter ">
         <div class="colums">
-            <span >Contributing, Source Code</span>
-            <a href="https://github.com/KacperStrugala1/message_repo">
-                
-                <button class="button">
-                    <span class="icon">
-                    <i class="fab fa-github"></i>
-                    </span>
-                    <span>GitHub</span>
-                </button>
-            </a>
+            <div class="box m-3">
+                <h4 class="">Contributing, Source Code</h4>
+                <br>
+                <a href="https://github.com/KacperStrugala1/message_repo">
+                    
+                    <button class="button">
+                        <span class="icon">
+                        <i class="fab fa-github"></i>
+                        </span>
+                        <span>GitHub</span>
+                    </button>
+                </a>
+            </div>
         </div>
+        <div class="box has-text-centered">
         <h1 class="title is-2 is-align-content-center mt-4">Project - SOLEC:</h1>
         <h2 class="subtitle is-4 is-align-content-center">Sytem of Lightweight Electronic Communication</h2>
         <h2 class="subtitle is-4">
@@ -35,7 +39,7 @@
             przejdz do panelu logowania aby korzystac z kanalow
         </h2>
 
-        <button class="button is-primary is-flex align-content">
+        <button class="button is-primary is-centered">
             <a href="{% url 'login_view' %}">Zaloguj sie</a><br>
         </button>
     </main>
