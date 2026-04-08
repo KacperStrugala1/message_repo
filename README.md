@@ -21,4 +21,5 @@ Receving messages from clients [in progress] <br>
 Sending messages to clients [in progress] <br>
 
 # Server communication current view #
+![att CwfZ4ey9rzIev2KbHivozHoK0RF3OBymvfOyEq7qJWY](https://github.com/user-attachments/assets/1a66dd9d-10e2-47fa-8c57-3df9668ecbf3)
 
