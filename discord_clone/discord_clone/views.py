@@ -2,6 +2,9 @@ from django.http import HttpResponse
 from django.views import View
 from django.shortcuts import redirect, render
 from .utils import socket_connect as sc
+from . import protocols
+import socket
+import struct
 
 
 class WelcomeView(View):
@@ -10,16 +13,10 @@ class WelcomeView(View):
     def get(self, request):
 
         return render(request, self.template_name)
-
-class HomeView(View):
-    template_name = "home.html"
-
-    def get(self, request):
-
-        return render(request, self.template_name)
-
+    
     def post(self, request):
-        return redirect("channel_view")
+        return redirect("login_view")
+
 
 
 class LoginView(View):
@@ -29,7 +26,7 @@ class LoginView(View):
         return render(request, self.template_name)
 
     def post(self, request):
-        return redirect("home_view")
+        return redirect("channel_view")
 
 
 class ChannelView(View):
@@ -41,4 +38,24 @@ class ChannelView(View):
         return render(request, self.template_name)
 
     def post(self, request):
-        pass
+        with protocols.client as s:
+            try:
+                s.connect((protocols.HOST, protocols.PORT))
+
+                #we want to recive 3 bytes to read type and payload length
+                header = protocols.get_data_type_and_length(s, 3)
+                type_payload = header[0]
+                length = struct.unpack("!H", header[1:])[0]
+
+                payload = protocols.get_data_type_and_length(s, length)
+
+                print("get handshake")
+                protocols.send_handshake()
+                protocols.send_auth()
+                while True:
+                    
+                    protocols.recive_type(s)
+
+            
+            except Exception as exc:
+                print(f"Exception: {exc}")

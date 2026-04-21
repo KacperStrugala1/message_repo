@@ -1,47 +1,111 @@
-from time import sleep
-import struct
 import socket
+import struct
+import time
 
-HOST="0.0.0.0"
-PORT=9999
+HOST = "127.0.0.1"
+PORT = 9999
 
-serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-serversocket.connect((HOST, PORT))
+TYPE_SUCCESS   = 0x01
+TYPE_ERROR     = 0x02
+TYPE_HANDSHAKE = 0x03
+TYPE_AUTH      = 0x04
+TYPE_MESSAGE   = 0x05
 
 
-#> - big endian 
-#0x01-00000001	Handshake version = 1
+def recv_exact(sock, length):
+    data = b''
+    while len(data) < length:
+        chunk = sock.recv(length - len(data))
+        if not chunk:
+            raise Exception("EOF")
+        data += chunk
+    return data
 
-# #0x02-00000010	Ping
-ping = struct.pack(">B", 0x02)
-packet_type = serversocket.recv(1)
-print(f"{packet_type}")
+def encode_string(s):
+    data = s.encode("utf-8")
+    return struct.pack("!H", len(data)) + data
 
-while True:
-    
-    #ping i pong
-    #recive 1 byte
-    packet_type = serversocket.recv(1)
-    sleep(3)
-    serversocket.sendall(ping)
-    if packet_type == b"\x03":
-        #uint64 -8 bytes so read 8 bytes
-        pong = serversocket.recv(8)
-        #unpack bytes stream
-        timestamp = struct.unpack(">Q", pong)[0]
-        print(f"Timestamp : {timestamp}")
-    #     #0xFF-00000010	Test
-        
-    #     serversocket.sendall(ping)
+def decode_string(payload, offset):
+    length = struct.unpack_from("!H", payload, offset)[0]
+    offset += 2
+    text = payload[offset:offset+length].decode("utf-8")
+    return text, offset + length
 
-    elif packet_type == b"\x04":  # Message
-            data = bytearray()
 
-            while True:
-                b = serversocket.recv(1)
-                if b == b'\x00':
-                    break
-                data += b
+def send_handshake(sock):
+    payload = struct.pack("!BBB", 0, 2, 1)  # major, minor, conn_type
+    packet = struct.pack("!BH", TYPE_HANDSHAKE, len(payload)) + payload
+    sock.sendall(packet)
 
-            text = data.decode("utf-8")
-            print("Message:", text)
+def send_auth(sock, user, password):
+    payload = encode_string(user) + encode_string(password)
+    packet = struct.pack("!BH", TYPE_AUTH, len(payload)) + payload
+    sock.sendall(packet)
+
+def send_message(sock, source, target, content):
+    payload = (
+        encode_string(source) +
+        encode_string(target) +
+        struct.pack("!Q", int(time.time())) +
+        encode_string(content)
+    )
+    packet = struct.pack("!BH", TYPE_MESSAGE, len(payload)) + payload
+    sock.sendall(packet)
+
+
+
+def parse_message(payload):
+    offset = 0
+
+    source, offset = decode_string(payload, offset)
+    target, offset = decode_string(payload, offset)
+
+    timestamp = struct.unpack_from("!Q", payload, offset)[0]
+    offset += 8
+
+    content, offset = decode_string(payload, offset)
+
+    print(f"{source} -> {target}: {content}")
+
+def handle_packet(sock):
+    header = recv_exact(sock, 3)
+
+    type_payload = header[0]
+    length = struct.unpack("!H", header[1:])[0]
+
+    payload = recv_exact(sock, length)
+
+    if type_payload == TYPE_SUCCESS:
+        print("Polaczono do serwera")
+
+    elif type_payload == TYPE_ERROR:
+        error_code = payload[0]
+        print(f"ERROR: {error_code}")
+
+    elif type_payload == TYPE_MESSAGE:
+        parse_message(payload)
+
+    elif type_payload == TYPE_HANDSHAKE:
+        proto_major = payload[0]
+        proto_minor = payload[1]
+
+    else:
+        print(f" UNKNOWN TYPE: {type_payload}")
+
+
+
+def main():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.connect((HOST, PORT))
+
+        send_handshake(sock)
+        send_auth(sock, "kacper", "valid")  
+
+        while True:
+            handle_packet(sock)
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print(f"Exception: {e}")
