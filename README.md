@@ -23,3 +23,12 @@ Sending messages to clients [in progress] <br>
 # Server communication current view #
 ![att CwfZ4ey9rzIev2KbHivozHoK0RF3OBymvfOyEq7qJWY](https://github.com/user-attachments/assets/1a66dd9d-10e2-47fa-8c57-3df9668ecbf3)
 
+# Installation and opening project in web #
+Required Python - 3.11 or newer
+
+```bash
+python -m venv venv
+source venv/bin/active #in Windows . venv/Scripts/activate
+pip install -r requirements.txt
+python discord_clone/manage.py migrate
+python discord_clone/manage.py runserver 
