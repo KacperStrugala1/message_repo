@@ -9,14 +9,35 @@
 <body>
     <main class="column is-half is-offset-one-quarter">
         <h1 class="title is-2">Kanaly {{user.username}}</h1>
+        <p>Wiadomosci</p>
+
+    <input type="text" id="msg" placeholder="Enter message">
+    <button class="button is-success" onclick="sendMessage()">Wyslij</button>
+
+    <ul id="messages"></ul>
+
+        <script>
+            const socket = new WebSocket("ws://127.0.0.1:9999/channel/");
+
+            socket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                const li = document.createElement("li");
+                li.innerText = data.message;
+                document.getElementById("messages").appendChild(li);
+            };
+
+            function sendMessage() {
+                const message = document.getElementById("msg").value;
+                socket.send(JSON.stringify({
+                    'message': message
+                }));
+            }
+        </script>
         <br>
-        <form>
-            <textarea rows="2" cols="50"></textarea><br>
-            <button method="POST" class="button is-info">Handshake</button>
-            <button method="POST" class="button is-warning">PING</button>
-            <button method="POST" class="button is-success">Message</button>
-            
-        </form>
+        <h2>Chat</h2>
+        <br>
+     
+      
     </main>
 
     
