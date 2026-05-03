@@ -6,7 +6,7 @@
 <img width="1749" height="629" alt="image" src="https://github.com/user-attachments/assets/621e774f-1cc1-46fa-a0f2-7759ef130ed4" />
 
 ## 3. Channel page ##
-<img width="1754" height="573" alt="image" src="https://github.com/user-attachments/assets/f1439805-cca9-45f0-840e-665c8698a30a" />
+<img width="1355" height="603" alt="image" src="https://github.com/user-attachments/assets/c5871002-1bd6-4d84-ac14-5ed57d56a501" />
 
 # Server testing phase #
 # 1.Terminal #
@@ -17,11 +17,8 @@ Sending messages to clients [in progress] <br>
 # 2.Graphical Interface #
 Connection to server [done] <br>
 Authentication to server [done] <br>
-Receving messages from clients [in progress] <br>
+Receving messages from clients [done] <br>
 Sending messages to clients [in progress] <br>
-
-# Server communication current view #
-![att CwfZ4ey9rzIev2KbHivozHoK0RF3OBymvfOyEq7qJWY](https://github.com/user-attachments/assets/1a66dd9d-10e2-47fa-8c57-3df9668ecbf3)
 
 # Installation and opening project in web #
 Required Python - 3.11 or newer
@@ -31,4 +28,6 @@ python -m venv venv
 source venv/bin/active #in Windows . venv/Scripts/activate
 pip install -r requirements.txt
 python discord_clone/manage.py migrate
-python discord_clone/manage.py runserver 
+#In 2 separate terminals
+python discord_clone/manage.py runserver
+python discord_clone/manage.py tcp_client 
