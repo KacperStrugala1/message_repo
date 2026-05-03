@@ -1,6 +1,11 @@
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+from discord_clone.models import Message
+from datetime import datetime
+import time
 import socket
 import struct
-import time
+
 
 HOST = "127.0.0.1"
 PORT = 9999
@@ -61,11 +66,34 @@ def parse_message(payload):
     target, offset = decode_string(payload, offset)
 
     timestamp = struct.unpack_from("!Q", payload, offset)[0]
+    
     offset += 8
+
+
+    try:
+        # Jeśli liczba jest astronomicznie duża (większa niż dla roku 3000)
+        # to znaczy, że na 99% serwer wysłał nam milisekundy.
+        if timestamp > 32503680000: 
+            sekundy = timestamp / 1000.0
+        else:
+            sekundy = timestamp
+
+        date_time_field = timezone.datetime.fromtimestamp(sekundy, tz=timezone.get_current_timezone())
+        
+    except (OverflowError, ValueError, OSError):
+        
+        print(f"Failed with timestamp, Timestamp value: {timestamp}. Set the actual time")
+        date_time_field = timezone.now()
 
     content, offset = decode_string(payload, offset)
 
-    print(f"{source} -> {target}: {content}")
+
+    Message.objects.create(
+        source = source,
+        target = target,
+        timestamp = date_time_field,
+        content = content
+    )
 
 def handle_packet(sock):
     header = recv_exact(sock, 3)
@@ -93,19 +121,19 @@ def handle_packet(sock):
         print(f" UNKNOWN TYPE: {type_payload}")
 
 
+class Command(BaseCommand):
+    help = 'Starting new TCP server'
 
-def main():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.connect((HOST, PORT))
+    def handle(self, *args, **options):
+        self.stdout.write("Starting TCP...")
+    
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.connect((HOST, PORT))
 
-        send_handshake(sock)
-        send_auth(sock, "kacper", "valid")  
+            send_handshake(sock)
+            send_auth(sock, "kacper", "valid")  
 
-        while True:
-            handle_packet(sock)
+            while True:
+                handle_packet(sock)
 
-if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        print(f"Exception: {e}")
+    

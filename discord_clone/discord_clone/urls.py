@@ -7,4 +7,5 @@ urlpatterns = [
     path("", views.WelcomeView.as_view(), name="welcome_view"),
     path("login", views.LoginView.as_view(), name="login_view"),
     path("channel", views.ChannelView.as_view(), name="channel_view"),
+    path("api/messages/", views.ApiView.as_view(), name="api_view")
 ]
