@@ -71,8 +71,6 @@ def parse_message(payload):
 
 
     try:
-        # Jeśli liczba jest astronomicznie duża (większa niż dla roku 3000)
-        # to znaczy, że na 99% serwer wysłał nam milisekundy.
         if timestamp > 32503680000: 
             sekundy = timestamp / 1000.0
         else:
