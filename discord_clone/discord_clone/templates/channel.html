@@ -5,51 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
     <title>Channels page</title>
+   
 </head>
 <body>
-    <main  class="column is-half is-offset-one-quarter">
-        <h1 class="title is-2">Kanały {{user.username}}</h1>
-        <h3 class="title is-3">Wiadomości</h3>
-        <div id="message-box" ></div>
+    <div class="columns mt-2">
+        <main class="main column is-two-thirds ml-4 mr-2">
+            <h1 class="title is-2">Główny kanał {{user.username}}</h1>
+            <h3 class="title is-3">Wiadomości</h3>
+            <div id="message-box" class="box">
+                {% for message in messages %}
+                    <p>{{message.source }}</p><p>{{message.content }}</p>
+                {% endfor %}
+            </div>
             
-            {% for message in messages %}
-                <p>{{message.source }}</p><p>{{message.content }}</p>
-            {% endfor %}
-        </div>
-        <br><br>
-    <input height="20" type="text" id="msg" placeholder="Enter message">
-    <button class="button is-success" onclick="sendMessage()">Wyślij</button>
-
-   <script>
-    function fetchMessage(){
-        fetch('/api/messages')
-        .then(response => response.json())
-        .then(data => {
-            const messageBox = document.getElementById("message-box");
-            //clear messages
-            messageBox.innerHTML = "";
-            
-            //new data from server
-            data.messages.forEach(msg => {
-                messageBox.innerHTML += `
-                    <p>
-                        <strong>${msg.source}</strong>
-                        ${msg.content}
-                    </p>
-                `;
-            });
-        })
-        .catch(error => console.error("Error while fetching messages", error))
-    }
-    //refresh after 2 seconds
-    setInterval(fetchMessage, 2000)
-   </script>
-
-       
-        
-      
-    </main>
-
+            <br>
+            <div class="column is-half">
+                <div class="field has-addons">
+                    <div class="control is-expanded">
+                        <input class="input is-hovered" type="text" placeholder="Wyślij wiadomość...." />
+                        
+                    </div>
+                    <div class="control">
+                        <button class="button is-success" onclick="sendMessage()">Wyślij</button>
+                    </div>
+                </div>
+            </div>
+        </main>
     
+        
+        <section class="channels column is-one-thirds ml-3 mr-3">
+
+            <h3 class="title is-3">Kanały</h3>  
+            <div class="box">
+                <p>User1</p>
+                <p>User2</p>
+                <p>User3</p>
+                <br>
+                <button class="button is-success" onclick="sendMessage()">Dodaj kanał</button>
+            </div>
+            <br>
+            
+        </section>
+    </div>
+    
+    <script>
+        function fetchMessage(){
+            fetch('/api/messages')
+            .then(response => response.json())
+            .then(data => {
+                const messageBox = document.getElementById("message-box");
+                //clear messages
+                messageBox.innerHTML = "";
+                
+                //new data from server
+                data.messages.forEach(msg => {
+                    messageBox.innerHTML += `
+                        <p>
+                            <strong>${msg.source}</strong>
+                            ${msg.content}
+                        </p>
+                    `;
+                });
+            })
+            .catch(error => console.error("Error while fetching messages", error))
+        }
+        //refresh after 2 seconds
+        setInterval(fetchMessage, 2000)
+
+        function sendMessage(){
+
+        }
+    </script>
 </body>
 </html>
