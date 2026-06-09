@@ -8,13 +8,42 @@
    
 </head>
 <body>
+    <form id="csrf-form" style="display: none;">
+        {% csrf_token %}
+    </form>
     <div class="columns mt-2">
+         
+        <section class="channels column is-one-fourth ml-3 mr-3">
+
+            <h3 class="title is-3">Kanały</h3>  
+            <div class="box">
+                {% if channels %}
+                    {% for ch in channels %}
+                        <button class="button is-success is-light is-fullwidth mb-2" onclick="selectTarget('{{ ch.addr|escapejs }}', '{{ ch.label|escapejs }}')">{{ ch.label }}</button>
+                    {% endfor %}
+                {% else %}
+                    <p class="has-text-grey">Brak kanałów. Dodaj testowy kanał poniżej.</p>
+                {% endif %}
+                <br>
+                <div class="field has-addons">
+                    <div class="control is-expanded">
+                        <input id="new-channel-input" class="input" type="text" placeholder="." />
+                    </div>
+                    <div class="control">
+                        <button class="button is-success" onclick="createTestChannel()">Dodaj kanał/usera</button>
+                    </div>
+                </div>
+            </div>
+            <br>
+            
+        </section>
         <main class="main column is-two-thirds ml-4 mr-2">
-            <h1 class="title is-2">Główny kanał {{user.username}}</h1>
+            <h1 class="title is-2">Kanał — {{ current_username }}</h1>
+            <p class="mb-3"><strong>Wysyłasz do:</strong> <span id="current-target-label"></span></p>
             <h3 class="title is-3">Wiadomości</h3>
-            <div id="message-box" class="box">
+            <div id="message-box" class="box" data-last-message-id="{{ last_message_id|default:0 }}">
                 {% for message in messages %}
-                    <p>{{message.source }}</p><p>{{message.content }}</p>
+                    <p data-message-id="{{ message.id }}"><strong>{{ message.source }}</strong> {{ message.content }}</p>
                 {% endfor %}
             </div>
             
@@ -22,7 +51,7 @@
             <div class="column is-half">
                 <div class="field has-addons">
                     <div class="control is-expanded">
-                        <input class="input is-hovered" type="text" placeholder="Wyślij wiadomość...." />
+                        <input id="message-input" class="input is-hovered" type="text" placeholder="Wyślij wiadomość...." />
                         
                     </div>
                     <div class="control">
@@ -32,48 +61,138 @@
             </div>
         </main>
     
-        
-        <section class="channels column is-one-thirds ml-3 mr-3">
-
-            <h3 class="title is-3">Kanały</h3>  
-            <div class="box">
-                <p>User1</p>
-                <p>User2</p>
-                <p>User3</p>
-                <br>
-                <button class="button is-success" onclick="sendMessage()">Dodaj kanał</button>
-            </div>
-            <br>
-            
-        </section>
+       
     </div>
     
     <script>
-        function fetchMessage(){
-            fetch('/api/messages')
+        const sourceName = "{{ current_username|default:'kacper' }}";
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || "";
+        const defaultTarget = "{{ current_target|default:'' }}";
+        let activeTarget = defaultTarget || "";
+        const messageBox = document.getElementById("message-box");
+        let lastMessageId = Number(messageBox.dataset.lastMessageId || 0);
+
+        document.getElementById("current-target-label").textContent = activeTarget || "(no channel)";
+
+       function appendMessage(msg) {
+
+            const exists = Array.from(
+                document.querySelectorAll("#message-box p")
+            ).some(row =>
+                row.dataset.source === msg.source &&
+                row.dataset.content === msg.content
+            );
+
+            if (exists) {
+                return;
+            }
+
+            const row = document.createElement("p");
+
+            row.dataset.messageId = msg.id || "";
+            row.dataset.source = msg.source;
+            row.dataset.content = msg.content;
+
+            row.innerHTML = `<strong>${msg.source}</strong> ${msg.content}`;
+
+            messageBox.appendChild(row);
+        }
+
+        function fetchMessage({ sync = false, reset = false } = {}){
+            const url = new URL('{% url "api_view" %}', window.location.origin);
+            url.searchParams.set('target', activeTarget);
+            url.searchParams.set('since_id', String(reset ? 0 : lastMessageId));
+            if (sync) {
+                url.searchParams.set('sync', '1');
+            }
+
+            fetch(url)
             .then(response => response.json())
             .then(data => {
-                const messageBox = document.getElementById("message-box");
-                //clear messages
-                messageBox.innerHTML = "";
-                
-                //new data from server
                 data.messages.forEach(msg => {
-                    messageBox.innerHTML += `
-                        <p>
-                            <strong>${msg.source}</strong>
-                            ${msg.content}
-                        </p>
-                    `;
+                    appendMessage(msg);
+                    lastMessageId = Math.max(lastMessageId, Number(msg.id || 0));
                 });
             })
             .catch(error => console.error("Error while fetching messages", error))
         }
         //refresh after 2 seconds
-        setInterval(fetchMessage, 2000)
+        setInterval(() => fetchMessage(), 2000)
+
+        function selectTarget(target, label) {
+            activeTarget = target;
+            document.getElementById("current-target-label").textContent = `${label} (${target})`;
+            messageBox.innerHTML = "";
+            messageBox.innerHTML = "";
+            lastMessageId = 0;
+
+            // pobierz tylko nowe wiadomości
+            fetchMessage({ sync: true });
+        }
 
         function sendMessage(){
+            const input = document.getElementById("message-input");
+            const content = input.value.trim();
 
+            if (!content) {
+                return;
+            }
+
+            fetch('{% url "api_view" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: new URLSearchParams({
+                    source: sourceName,
+                    target: activeTarget,
+                    content: content,
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Unable to send message');
+                }
+
+                return response.json();
+            })
+            .then(data => {
+                input.value = '';
+                if (data.message) {
+                    appendMessage(data.message);
+                    lastMessageId = Math.max(lastMessageId, Number(data.message.id || 0));
+                }
+            })
+            .catch(error => console.error('Error while sending message', error));
+        }
+
+        function createTestChannel(){
+            const username = document.getElementById('new-channel-input').value.trim();
+            if (!username) return;
+
+            fetch('{% url "add_test_channel" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: new URLSearchParams({ username }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.channel) {
+                    // add button to list and select it
+                    const box = document.querySelector('.channels .box');
+                    const btn = document.createElement('button');
+                    btn.className = 'button is-success is-light is-fullwidth mb-2';
+                    btn.textContent = username;
+                    btn.onclick = () => selectTarget(data.channel, username);
+                    box.insertBefore(btn, box.querySelector('br'));
+                    selectTarget(data.channel, username);
+                }
+            })
+            .catch(e => console.error('Create test channel failed', e));
         }
     </script>
 </body>

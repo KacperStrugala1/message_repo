@@ -25,28 +25,25 @@
         <div class="column is-half is-offset-one-quarter">
             <div class="box ">
                 <h1 class="title is-2">Panel logowania</h1>
-                {% csrf_token %}
-                <form class="">
-                <div class="field">
-                    <label class="label">Email/Nazwa uzytkownika</label>
-                    <div class="control">
-                    <input class="input" type="email" placeholder="e.g. user@gmail.com" />
+                <form method="post" action="{% url 'login_view' %}">
+                    {% csrf_token %}
+                    <div class="field">
+                        <label class="label">Email/Nazwa uzytkownika</label>
+                        <div class="control">
+                            <input class="input" name="username" type="text" value="kacper@rctt.net" placeholder="kacper@rctt.net" />
+                        </div>
                     </div>
-                </div>
 
-                <div class="field">
-                    <label class="label">Haslo</label>
-                    <div class="control">
-                    <input class="input" type="password" placeholder="********" />
+                    <div class="field">
+                        <label class="label">Haslo</label>
+                        <div class="control">
+                            <input class="input" name="password" type="password" value="SnKpJmnSgkwW" placeholder="********" />
+                        </div>
                     </div>
-                </div>
-                <br>
-               
+                    <br>
+
+                    <button class="button is-primary" type="submit">Zaloguj sie</button>
                 </form>
-                 {% comment %}Put it into form template {% endcomment %}
-                <a href="{% url 'channel_view' %}">
-                    <button class="button is-primary" >Zaloguj sie</button>
-                </a>
         
             </div>
         </div>

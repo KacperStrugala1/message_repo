@@ -1,96 +1,133 @@
-import socket
 import struct
+import time
 
 
-HOST = "127.0.0.1"
-PORT = 9999
+SERVER_DOMAIN = "rctt.net"
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-def get_data_type_and_length(client , length):
-    data = b''
-    #until data  < length
-    while len(data) < length:
-        #chunk = 3 - 0 
-        chunk = client.recv(length-len(data))
-        if not chunk:
-            raise Exception("EOF")
-        data += chunk
-    return data
+TYPE_SUCCESS = 0x01
+TYPE_ERROR = 0x02
+TYPE_HANDSHAKE = 0x03
+TYPE_AUTH = 0x04
+TYPE_MESSAGE = 0x05
+TYPE_LIST = 0x06
+TYPE_USERMODE = 0x07
+TYPE_HISTORY = 0x08
 
 
-def send_handshake():
-    hanshake = struct.pack("!BHBB", 3, 2, 0, 1)
-    client.sendall(hanshake)
+def encode_string(s):
+    encoded = s.encode("utf-8")
+    return struct.pack("!H", len(encoded)) + encoded
 
-def encode_string(s:str):
-    phrase = s.encode("utf-8")
-    return struct.pack("!H", len(phrase)) + phrase
- 
-#auth
-def send_auth():
-    login = encode_string("kacper")
-    password = encode_string("valid")
 
-    auth_login = login + password
-    
-    auth = struct.pack("!BH", 4, len(auth_login) ) + auth_login
-    client.sendall(auth)
+def decode_string(payload, offset):
+    length = struct.unpack_from("!H", payload, offset)[0]
+    offset += 2
+    text = payload[offset : offset + length].decode("utf-8")
+    return text, offset + length
 
-def recive_type(sock):
-    header = get_data_type_and_length(sock, 3)
-    type_payload = header[0]
-    length = struct.unpack("!H", header[1:])[0]
-    
-    payload = get_data_type_and_length(s, length)
 
+def _normalize_address(address):
+    address = (address or "").strip()
+    if not address:
+        return address
+
+    if "@" not in address:
+        return f"{address}@{SERVER_DOMAIN}"
+
+    user, _host = address.split("@", 1)
+    return f"{user}@{SERVER_DOMAIN}"
+
+
+def get_handshake():
+    payload = struct.pack("!BBB", 0, 1, 1)
+    return struct.pack("!BH", TYPE_HANDSHAKE, len(payload)) + payload
+
+
+def get_auth(user, password):
+    payload = encode_string(user) + encode_string(password)
+    return struct.pack("!BH", TYPE_AUTH, len(payload)) + payload
+
+
+def get_join_channel(my_username, target_channel):
+    clean_user = _normalize_address(my_username)
+    clean_room = (target_channel or "").strip()
+    if not clean_room.startswith("#"):
+        clean_room = f"#{clean_room}"
+    clean_room = _normalize_address(clean_room)
+
+    payload = (
+        encode_string(clean_user)
+        + encode_string(clean_room)
+        + struct.pack("!B", 0x01)
+    )
+    return struct.pack("!BH", TYPE_USERMODE, len(payload)) + payload
+
+
+def get_leave_channel(my_username, target_channel):
+    clean_user = _normalize_address(my_username)
+    clean_room = (target_channel or "").strip()
+    if not clean_room.startswith("#"):
+        clean_room = f"#{clean_room}"
+    clean_room = _normalize_address(clean_room)
+
+    payload = (
+        encode_string(clean_user)
+        + encode_string(clean_room)
+        + struct.pack("!B", 0x00)
+    )
+    return struct.pack("!BH", TYPE_USERMODE, len(payload)) + payload
+
+
+def get_list_packet(count=100, offset=0):
+    payload = struct.pack("!q", count) + struct.pack("!q", offset)
+    return struct.pack("!BH", TYPE_LIST, len(payload)) + payload
+
+
+def get_message_packet(source, target, content):
+    timestamp = int(time.time())
+    payload = (
+        encode_string(_normalize_address(source))
+        + encode_string(_normalize_address(target))
+        + struct.pack("!Q", timestamp)
+        + encode_string(content)
+    )
+    return struct.pack("!BH", TYPE_MESSAGE, len(payload)) + payload
+
+
+def parse_message(payload):
     offset = 0
-
-    #source 2 bajty
-    length = int.from_bytes(payload[offset:offset+2], "big")
-    offset +=2
-    source = payload[offset:offset+length].decode()
-    offset+= length 
-
-    # target 2 bajty
-    length = int.from_bytes(payload[offset:offset+2], 'big')
-    offset += 2
-    target = payload[offset:offset+length].decode()
-    offset += length
-
-    # timestamp 8 bajtow
-    length = int.from_bytes(payload[offset:offset+8], "big")
-    offset += 8
-    timestamp = payload[offset]
-    offset += 2
-
-    # content to the end
-    content = payload[offset:].decode(errors='ignore')
-    print(source, target, timestamp, content)
-
-    print(f"Source -> {source}, to: {target}, message: {content}")
-
-with client as s:
     try:
-        s.connect((HOST, PORT))
+        source, offset = decode_string(payload, offset)
+        target, offset = decode_string(payload, offset)
+        timestamp = struct.unpack_from("!Q", payload, offset)[0]
+        offset += 8
+        content, _ = decode_string(payload, offset)
 
-        #we want to recive 3 bytes to read type and payload length
-        header = get_data_type_and_length(s, 3)
-        type_payload = header[0]
-        length = struct.unpack("!H", header[1:])[0]
+        return {
+            "source": _normalize_address(source),
+            "target": _normalize_address(target),
+            "timestamp": timestamp,
+            "content": content,
+        }
+    except Exception:
+        return None
 
-        payload = get_data_type_and_length(s, length)
 
-        print("get handshake")
-        send_handshake()
-        print("handshake sent")
-        send_auth()
-        print("auth correct")
-        while True:
-            
-           recive_type(s)
+def get_usermode_packet(user_address, channel_name, mode=0x01):
+    payload = (
+        encode_string(_normalize_address(user_address))
+        + encode_string(_normalize_address(channel_name))
+        + struct.pack("!B", mode)
+    )
+    return struct.pack("!BH", TYPE_USERMODE, len(payload)) + payload
 
-     
-    except Exception as exc:
-        print(f"Exception: {exc}")
+
+def get_history_packet(channel_address, since_timestamp, count=100, offset=0):
+    payload = (
+        encode_string(_normalize_address(channel_address))
+        + struct.pack("!q", since_timestamp)
+        + struct.pack("!q", count)
+        + struct.pack("!q", offset)
+    )
+    return struct.pack("!BH", TYPE_HISTORY, len(payload)) + payload
   

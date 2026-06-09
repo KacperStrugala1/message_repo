@@ -6,5 +6,13 @@ class Message(models.Model):
     timestamp = models.DateTimeField()
     content = models.TextField()
 
+    fingerprint = models.CharField(
+        max_length=64,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True
+    )
+
     def __str__(self):
         return f"{self.source}: {self.target}"

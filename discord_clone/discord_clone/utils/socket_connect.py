@@ -1,6 +1,6 @@
 import socket
 
-HOST="127.0.0.1"
+HOST="rctt.net"
 PORT=9999
 
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
